@@ -1,16 +1,182 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>DSA LAB SYSTEM</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinic Lab System</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.9/minified/html5-qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { margin: 0; background: #f4f6f9; }
+    header { background: #007bff; color: white; padding: 1rem; text-align: center; font-size: 1.4rem; }
+    nav { background: #343a40; padding: 1rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+    nav button { background: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+    nav button:hover { background: #5a6268; }
+    section { padding: 2rem; display: none; }
+    section.active { display: block; }
+    input, select, textarea { width: 100%; padding: 0.5rem; margin: 0.3rem 0 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #218838; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+    th { background: #007bff; color: white; }
+    .qr-img { width: 80px; }
+    #reader { width: 100%; max-width: 400px; margin: auto; }
+    .motivator { margin: 1rem 0; font-size: 1rem; color: #007bff; font-weight: bold; }
+    canvas { max-width: 100%; }
+  </style>
 </head>
 <body>
-  <h1>مرحباً وداد 👋💚</h1>
-  <p>هذا سيكون التطبيق الأساسي لنظام المعمل.</p>
+  <header>Clinic Lab System 🦷<br><span style="font-size: 0.8rem;">نظام إدارة الحالات بين العيادة والمعمل</span></header>
+  <nav>
+    <button onclick="showSection('addCase')">➕ Add Case</button>
+    <button onclick="showSection('casesList')">📋 Cases</button>
+    <button onclick="showSection('scanQR')">📷 Scan QR</button>
+    <button onclick="showSection('stats')">📊 Stats</button>
+  </nav>
 
-  <button onclick="alert('بنضيف لك صفحة الحالات بعد شوي 😄')">
-    دخول الحالات
-  </button>
+  <!-- 1. Add Case -->
+  <section id="addCase" class="active">
+    <h2>Add New Case</h2>
+    <form id="caseForm">
+      <input type="text" id="patientName" placeholder="Patient Name" required />
+      <input type="text" id="fileNumber" placeholder="File Number" />
+      <input type="text" id="doctor" placeholder="Doctor" />
+      <input type="text" id="assistant" placeholder="Assistant" />
+      <input type="text" id="clinic" placeholder="Clinic" />
+      <select id="caseType">
+        <option value="">Select Case Type</option>
+        <option>New</option>
+        <option>Re-do</option>
+        <option>Step 2</option>
+      </select>
+      <textarea id="description" placeholder="Case Details..."></textarea>
+      <button type="submit" class="btn">Save Case</button>
+    </form>
+    <div class="motivator">💡 You are building the future of dental care!</div>
+  </section>
+
+  <!-- 2. Cases List -->
+  <section id="casesList">
+    <h2>All Cases</h2>
+    <table id="casesTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Patient</th><th>Doctor</th><th>Status</th><th>QR</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- 3. QR Scanner -->
+  <section id="scanQR">
+    <h2>Scan QR Code</h2>
+    <div id="reader"></div>
+    <div class="motivator">🎯 Scan to update or view a case instantly</div>
+  </section>
+
+  <!-- 4. Stats -->
+  <section id="stats">
+    <h2>📊 Case Statistics</h2>
+    <canvas id="statsChart"></canvas>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrious"></script>
+  <script>
+    const cases = JSON.parse(localStorage.getItem('clinicCases') || '[]');
+    const tableBody = document.querySelector("#casesTable tbody");
+
+    function showSection(id) {
+      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = '';
+      cases.forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${c.id}</td>
+          <td>${c.patient}</td>
+          <td>${c.doctor}</td>
+          <td>${c.status}</td>
+          <td><img class="qr-img" src="${c.qr}" /></td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function generateQR(id) {
+      const qr = new QRious({ value: id, size: 100 });
+      return qr.toDataURL();
+    }
+
+    document.getElementById("caseForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const id = "C" + Date.now();
+      const qr = generateQR(id);
+      const newCase = {
+        id,
+        patient: patientName.value,
+        file: fileNumber.value,
+        doctor: doctor.value,
+        assistant: assistant.value,
+        clinic: clinic.value,
+        type: caseType.value,
+        desc: description.value,
+        status: "New",
+        qr,
+        history: [ { stage: "Added", date: new Date().toLocaleString() } ]
+      };
+      cases.push(newCase);
+      localStorage.setItem("clinicCases", JSON.stringify(cases));
+      this.reset();
+      renderTable();
+      alert("✅ Case saved with ID: " + id);
+    });
+
+    renderTable();
+
+    const htmlScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    htmlScanner.render((decodedText) => {
+      const found = cases.find(c => c.id === decodedText);
+      if (!found) return alert("❌ Case not found!");
+      const go = confirm(`📄 Case: ${found.patient}\nDoctor: ${found.doctor}\n\n➡️ View details?`);
+      if (go) {
+        alert(`✅ Case: ${found.patient}\nType: ${found.type}\nStatus: ${found.status}`);
+      } else {
+        found.status = "Next Stage";
+        found.history.push({ stage: "Updated", date: new Date().toLocaleString() });
+        localStorage.setItem("clinicCases", JSON.stringify(cases));
+        renderTable();
+        alert("🔁 Case status updated!");
+      }
+    });
+
+    // Chart
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['New', 'Next Stage', 'Done'],
+        datasets: [{
+          label: 'Cases',
+          data: [0, 0, 0],
+          backgroundColor: ['#007bff', '#ffc107', '#28a745']
+        }]
+      }
+    });
+
+    function updateChart() {
+      const stats = { New: 0, "Next Stage": 0, Done: 0 };
+      cases.forEach(c => stats[c.status] = (stats[c.status] || 0) + 1);
+      chart.data.datasets[0].data = [stats["New"], stats["Next Stage"], stats["Done"]];
+      chart.update();
+    }
+
+    updateChart();
+  </script>
 </body>
 </html>
