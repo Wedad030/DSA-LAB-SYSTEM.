@@ -1,182 +1,1365 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Clinic Lab System</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.9/minified/html5-qrcode.min.js"></script>
+  <title>💚 DSA LAB SYSTEM – نسخة وداد الرسمية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Firebase compat SDKs (أسهل شيء مع GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js"></script>
+
+  <!-- QRCode مكتبة صغيرة لتوليد QR نصي -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { margin: 0; background: #f4f6f9; }
-    header { background: #007bff; color: white; padding: 1rem; text-align: center; font-size: 1.4rem; }
-    nav { background: #343a40; padding: 1rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
-    nav button { background: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-    nav button:hover { background: #5a6268; }
-    section { padding: 2rem; display: none; }
-    section.active { display: block; }
-    input, select, textarea { width: 100%; padding: 0.5rem; margin: 0.3rem 0 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    .btn { background: #28a745; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background: #218838; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
-    th { background: #007bff; color: white; }
-    .qr-img { width: 80px; }
-    #reader { width: 100%; max-width: 400px; margin: auto; }
-    .motivator { margin: 1rem 0; font-size: 1rem; color: #007bff; font-weight: bold; }
-    canvas { max-width: 100%; }
+    :root {
+      --green-main: #0b8a4a;
+      --green-soft: #e9f7ef;
+      --green-mid: #1f9e5a;
+      --accent-yellow: #ffd95e;
+      --danger: #d9534f;
+      --text-dark: #133020;
+      --card-radius: 18px;
+      --shadow-soft: 0 10px 25px rgba(0,0,0,0.08);
+      --font-ar: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-ar);
+      background: linear-gradient(135deg, #e6f9f0, #f6fffb);
+      color: var(--text-dark);
+    }
+
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ====== Sidebar ===== */
+    .sidebar {
+      width: 230px;
+      background: var(--green-main);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 10px;
+    }
+
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 16px;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .sidebar-header span {
+      display: block;
+      font-size: 11px;
+      opacity: .9;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex: 1;
+    }
+
+    .nav-item {
+      margin-bottom: 6px;
+    }
+
+    .nav-link {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+
+    .nav-link span.en {
+      font-size: 10px;
+      opacity: .8;
+    }
+
+    .nav-link .icon {
+      font-size: 16px;
+      margin-left: 6px;
+    }
+
+    .nav-link.active {
+      background: #fff;
+      color: var(--green-main);
+      transform: translateX(-3px);
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    .sidebar-footer {
+      font-size: 10px;
+      text-align: center;
+      opacity: .8;
+      margin-top: 8px;
+    }
+
+    /* ===== Main area ===== */
+    .main {
+      flex: 1;
+      padding: 18px 20px;
+      overflow-y: auto;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 14px;
+    }
+
+    .pages {
+      display: none;
+    }
+    .pages.active {
+      display: block;
+    }
+
+    /* ===== Cards & layout ===== */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #444;
+    }
+
+    .card .en-label {
+      display: block;
+      font-size: 10px;
+      color: #777;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+
+    .pill .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green-main);
+      margin-left: 6px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .label-en {
+      font-size: 9px;
+      color: #777;
+      display: inline-block;
+      margin-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    input[type="date"],
+    input[type="password"],
+    select,
+    textarea {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      font-size: 12px;
+      outline: none;
+      transition: border .15s, box-shadow .15s;
+    }
+
+    textarea {
+      border-radius: 12px;
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--green-mid);
+      box-shadow: 0 0 0 2px rgba(31,158,90,0.16);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    .btn {
+      border-radius: 999px;
+      padding: 8px 16px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .btn-main {
+      background: var(--green-mid);
+      color: #fff;
+    }
+
+    .btn-main:hover { background: #147545; }
+
+    .btn-ghost {
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #f2f2f2;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      margin-left: 4px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      background: #eef5ff;
+      color: #234;
+      margin-top: 4px;
+    }
+
+    .status-chip.complete {
+      background: #e4ffe9;
+      color: #176235;
+    }
+
+    .status-chip.in-lab {
+      background: #fff6e1;
+      color: #8a5a00;
+    }
+
+    .case-list {
+      max-height: 340px;
+      overflow-y: auto;
+      margin-top: 6px;
+      border-radius: 14px;
+      border: 1px solid #eee;
+    }
+
+    .case-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f1f1;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .case-item:nth-child(odd) {
+      background: #fcfffd;
+    }
+
+    .case-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .case-item-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .muted {
+      font-size: 10px;
+      color: #777;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, -8px);
+      pointer-events: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .app-shell {
+        flex-direction: column-reverse;
+      }
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 8px;
+      }
+      .sidebar-header {
+        display: none;
+      }
+      .nav-link {
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .main {
+        padding: 10px;
+      }
+    }
   </style>
 </head>
 <body>
-  <header>Clinic Lab System 🦷<br><span style="font-size: 0.8rem;">نظام إدارة الحالات بين العيادة والمعمل</span></header>
-  <nav>
-    <button onclick="showSection('addCase')">➕ Add Case</button>
-    <button onclick="showSection('casesList')">📋 Cases</button>
-    <button onclick="showSection('scanQR')">📷 Scan QR</button>
-    <button onclick="showSection('stats')">📊 Stats</button>
-  </nav>
+<div class="app-shell">
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      💚 DSA LAB SYSTEM<br/>
+      <span>نسخة وداد الرسمية – V1</span>
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item">
+        <button class="nav-link active" data-target="clinic-page">
+          <div>
+            📋 تسجيل الحالة<br/>
+            <span class="en">Clinic Entry</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-target="lab-check-page">
+          <div>
+            🧪 استلام الحالة في المعمل<br/>
+            <span class="en">Lab Check-In</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-target="tech-page">
+          <div>
+            👨🏻‍🔧 لوحة الفنيين<br/>
+            <span class="en">Technicians Dashboard</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-target="ready-page">
+          <div>
+            ✅ الاستلام النهائي<br/>
+            <span class="en">Ready for Clinic</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-target="search-page">
+          <div>
+            🔎 بحث عن حالة<br/>
+            <span class="en">Search Case</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-target="settings-page">
+          <div>
+            ⚙️ الإعدادات<br/>
+            <span class="en">Settings</span>
+          </div>
+          <span class="icon">•</span>
+        </button>
+      </li>
+    </ul>
+    <div class="sidebar-footer">
+      الحقوق محفوظة لصاحبة الفكرة 💚 وداد الجابري
+    </div>
+  </aside>
 
-  <!-- 1. Add Case -->
-  <section id="addCase" class="active">
-    <h2>Add New Case</h2>
-    <form id="caseForm">
-      <input type="text" id="patientName" placeholder="Patient Name" required />
-      <input type="text" id="fileNumber" placeholder="File Number" />
-      <input type="text" id="doctor" placeholder="Doctor" />
-      <input type="text" id="assistant" placeholder="Assistant" />
-      <input type="text" id="clinic" placeholder="Clinic" />
-      <select id="caseType">
-        <option value="">Select Case Type</option>
-        <option>New</option>
-        <option>Re-do</option>
-        <option>Step 2</option>
-      </select>
-      <textarea id="description" placeholder="Case Details..."></textarea>
-      <button type="submit" class="btn">Save Case</button>
-    </form>
-    <div class="motivator">💡 You are building the future of dental care!</div>
-  </section>
+  <!-- ========== MAIN ========== -->
+  <main class="main">
 
-  <!-- 2. Cases List -->
-  <section id="casesList">
-    <h2>All Cases</h2>
-    <table id="casesTable">
-      <thead>
-        <tr>
-          <th>ID</th><th>Patient</th><th>Doctor</th><th>Status</th><th>QR</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <!-- ===== CLINIC ENTRY ===== -->
+    <section id="clinic-page" class="pages active">
+      <div class="page-title">📋 تسجيل الحالة من العيادة</div>
+      <div class="page-subtitle">
+        أول خطوة تبدأ من هنا – يتم توليد رقم معمل وباركود وتتسجل في المتابعة تلقائياً.
+      </div>
 
-  <!-- 3. QR Scanner -->
-  <section id="scanQR">
-    <h2>Scan QR Code</h2>
-    <div id="reader"></div>
-    <div class="motivator">🎯 Scan to update or view a case instantly</div>
-  </section>
+      <div class="grid">
+        <div class="card">
+          <div class="pill"><span class="dot"></span> معلومات المريض / Patient Info</div>
+          <h2>بيانات أساسية</h2>
+          <form id="clinicForm">
+            <div class="row">
+              <div>
+                <label>رقم الملف <span class="label-en">File Number</span></label>
+                <input type="text" id="fileNumber" required />
+              </div>
+              <div>
+                <label>اسم المريض <span class="label-en">Patient Name</span></label>
+                <input type="text" id="patientName" required />
+              </div>
+            </div>
 
-  <!-- 4. Stats -->
-  <section id="stats">
-    <h2>📊 Case Statistics</h2>
-    <canvas id="statsChart"></canvas>
-  </section>
+            <div class="row">
+              <div>
+                <label>رقم العيادة <span class="label-en">Clinic Number</span></label>
+                <input type="text" id="clinicNumber" required />
+              </div>
+              <div>
+                <label>اسم الطبيب <span class="label-en">Doctor Name</span></label>
+                <input type="text" id="doctorName" required />
+              </div>
+            </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrious"></script>
-  <script>
-    const cases = JSON.parse(localStorage.getItem('clinicCases') || '[]');
-    const tableBody = document.querySelector("#casesTable tbody");
+            <div class="row">
+              <div>
+                <label>نوع الحالة <span class="label-en">Case Type</span></label>
+                <select id="caseType" required>
+                  <option value="">اختيار…</option>
+                  <option value="CAD/CAM Crown">Crown – CAD/CAM</option>
+                  <option value="PFM">PFM</option>
+                  <option value="RPD">RPD (Removable)</option>
+                  <option value="Ortho">Ortho</option>
+                  <option value="Temporary">Temporary / Provisional</option>
+                  <option value="Casting">Casting</option>
+                  <option value="Other">أخرى / Other</option>
+                </select>
+              </div>
+              <div>
+                <label>موعد المريض القادم <span class="label-en">Next Appointment</span></label>
+                <input type="date" id="nextAppointment" />
+              </div>
+            </div>
 
-    function showSection(id) {
-      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
+            <div>
+              <label>ملاحظة الطبيب (اختياري) <span class="label-en">Doctor Notes</span></label>
+              <textarea id="doctorNote" placeholder="مثال: Upper crown, shade A2…"></textarea>
+            </div>
+
+            <div>
+              <label>رابط صورة الطلب / R4 / Snap (اختياري)</label>
+              <input type="text" id="requestImage" placeholder="رابط الصورة أو الملاحظة" />
+            </div>
+
+            <button type="submit" class="btn btn-main">
+              💾 حفظ الحالة + توليد رقم معمل
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="pill"><span class="dot"></span> معاينة سريعة</div>
+          <h2>آخر حالة تم حفظها</h2>
+          <div id="lastCaseBox" class="muted">
+            لم يتم حفظ أي حالة بعد.
+          </div>
+
+          <hr style="margin: 14px 0; border: 0; border-top: 1px dashed #ddd;" />
+
+          <h3>باركود الحالة</h3>
+          <div id="barcodeText" class="badge">—</div>
+          <div id="qrcode" style="margin-top: 10px;"></div>
+
+          <p class="muted" style="margin-top: 10px;">
+            يتم استخدام نفس الكود للبحث في جميع الصفحات (استلام المعمل، الفنيين، الاستلام النهائي، البحث).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== LAB CHECK-IN ===== -->
+    <section id="lab-check-page" class="pages">
+      <div class="page-title">🧪 استلام الحالة في المعمل (Lab Check-In)</div>
+      <div class="page-subtitle">
+        العامل أو المساعدة يمسح الباركود (أو يكتب رقم المعمل/الملف) ويؤكد وصول الحالة.
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="pill"><span class="dot"></span> بحث عن الحالة</div>
+          <h2>🔎 ابحث بالباركود / الملف</h2>
+          <div class="row">
+            <div>
+              <label>بحث <span class="label-en">File / Lab / Barcode</span></label>
+              <input type="text" id="labSearchInput" placeholder="اكتب رقم الملف أو رقم المعمل أو الباركود" />
+            </div>
+            <div style="flex:0 0 auto; display:flex; align-items:flex-end;">
+              <button class="btn btn-main" id="btnLabSearch">بحث</button>
+            </div>
+          </div>
+          <div id="labSearchResult" style="margin-top:10px;" class="muted">
+            أدخل رقم البحث ثم اضغط بحث.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TECH DASHBOARD ===== -->
+    <section id="tech-page" class="pages">
+      <div class="page-title">👨🏻‍🔧 لوحة الفنيين</div>
+      <div class="page-subtitle">
+        توزيع الحالات على الفنيين، وتحديث حالة التنفيذ (In Progress / Completed / Returned).
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="pill"><span class="dot"></span> اختيار القسم / الفني</div>
+          <h2>الفلاتر</h2>
+          <div class="row">
+            <div>
+              <label>القسم <span class="label-en">Department</span></label>
+              <select id="techDeptFilter">
+                <option value="">كل الأقسام</option>
+                <option value="CAD/CAM">CAD/CAM</option>
+                <option value="PFM">PFM</option>
+                <option value="RPD">RPD</option>
+                <option value="Ortho">Ortho</option>
+                <option value="Temporary">Temporary</option>
+                <option value="Casting">Casting</option>
+              </select>
+            </div>
+            <div>
+              <label>الفني <span class="label-en">Technician</span></label>
+              <select id="techNameFilter">
+                <option value="">كل الفنيين</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-main" id="btnLoadTechCases" style="margin-top:10px;">
+            🔄 تحميل الحالات
+          </button>
+          <p class="muted" style="margin-top:6px;">
+            يتم إظهار الحالات غير المكتملة فقط لكل فني، مع إمكانية تغيير الحالة مباشرة.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="pill"><span class="dot"></span> حالات الفني</div>
+          <h2>قائمة الحالات</h2>
+          <div id="techCasesList" class="case-list">
+            <div class="case-item muted">
+              لا توجد بيانات بعد – اختر القسم والفني واضغط تحميل الحالات.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== READY FOR CLINIC ===== -->
+    <section id="ready-page" class="pages">
+      <div class="page-title">✅ الاستلام النهائي – Ready for Clinic</div>
+      <div class="page-subtitle">
+        هنا تراجعين الحالات المكتملة وتسوين Ready for Clinic مع رقم الصندوق Box.
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="pill"><span class="dot"></span> بحث عن حالة مكتملة</div>
+          <h2>🔎 بحث</h2>
+          <div class="row">
+            <div>
+              <label>بحث <span class="label-en">File / Lab / Barcode</span></label>
+              <input type="text" id="readySearchInput" placeholder="رقم الملف أو المعمل أو الباركود" />
+            </div>
+            <div style="flex:0 0 auto; display:flex; align-items:flex-end;">
+              <button class="btn btn-main" id="btnReadySearch">بحث</button>
+            </div>
+          </div>
+          <div id="readySearchResult" style="margin-top:10px;" class="muted">
+            أدخل رقم البحث ثم اضغط بحث.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="pill"><span class="dot"></span> قائمة الحالات المكتملة</div>
+          <h2>جاهزة للتسليم</h2>
+          <button class="btn btn-ghost" id="btnLoadCompleted" style="margin-bottom:6px;">
+            🔄 عرض آخر ٢٠ حالة Completed
+          </button>
+          <div id="readyCasesList" class="case-list">
+            <div class="case-item muted">لا توجد بيانات بعد.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SEARCH PAGE ===== -->
+    <section id="search-page" class="pages">
+      <div class="page-title">🔎 بحث شامل عن حالة</div>
+      <div class="page-subtitle">
+        بحث واحد يطلع لك كل بيانات الحالة + تريخ التتبع Tracking.
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h2>بحث</h2>
+          <label>رقم الملف / رقم المعمل / الباركود</label>
+          <div class="row">
+            <div>
+              <input type="text" id="globalSearchInput" />
+            </div>
+            <div style="flex:0 0 auto; display:flex; align-items:flex-end;">
+              <button class="btn btn-main" id="btnGlobalSearch">بحث</button>
+            </div>
+          </div>
+          <p class="muted">يمكنك نسخ الباركود مباشرة من ورقة الحالة أو من تقرير الطبيب.</p>
+        </div>
+
+        <div class="card">
+          <div class="pill"><span class="dot"></span> تفاصيل الحالة</div>
+          <h2>البيانات</h2>
+          <div id="globalCaseDetails" class="muted">لا توجد بيانات بعد.</div>
+          <hr style="margin:10px 0; border:0; border-top:1px dashed #eee;">
+          <h3>تتبع الحالة (Tracking)</h3>
+          <div id="globalTracking" class="muted">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SETTINGS ===== -->
+    <section id="settings-page" class="pages">
+      <div class="page-title">⚙️ الإعدادات – Settings</div>
+      <div class="page-subtitle">
+        الرقم السري للأخصائية + حالة الفنيين (نشط / إجازة) – يتم حفظها في Firestore.
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="pill"><span class="dot"></span> الأمان</div>
+          <h2>الرقم السري للأخصائية</h2>
+          <label>الرقم السري <span class="label-en">Specialist PIN</span></label>
+          <input type="password" id="specialistPinInput" placeholder="مثال: 0987" />
+          <button class="btn btn-main" id="btnSavePin">حفظ الرقم السري</button>
+          <p class="muted">هذا الـ PIN يمكن استخدامه لاحقاً لقفل بعض الصفحات المهمة.</p>
+        </div>
+
+        <div class="card">
+          <div class="pill"><span class="dot"></span> الفنيين</div>
+          <h2>حالة الفنيين</h2>
+          <p class="muted">
+            تغيير حالة الفني (نشط / إجازة) يؤثر على توزيع الحالات في لوحة الفنيين.
+          </p>
+          <button class="btn btn-ghost" id="btnSeedTechs">
+            ➕ إنشاء قائمة الفنيين الافتراضية (مرة واحدة)
+          </button>
+
+          <label style="margin-top:8px;">بحث عن فني</label>
+          <input type="text" id="techSearchInput" placeholder="اكتب الاسم…" />
+
+          <div id="techSettingsList" class="case-list" style="margin-top:8px;">
+            <div class="case-item muted">لا توجد بيانات بعد.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // ========= Firebase init =========
+  const firebaseConfig = {
+    apiKey: "AIzaSyARQRegsdUi6hO_p6txm1XjnAV45cAU4Ac",
+    authDomain: "dsa-lab-system.firebaseapp.com",
+    projectId: "dsa-lab-system",
+    storageBucket: "dsa-lab-system.firebasestorage.app",
+    messagingSenderId: "1081285804674",
+    appId: "1:1081285804674:web:91e4775b7bfa5e60366a9b",
+    measurementId: "G-271TRGHNVJ"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const casesRef = db.collection("cases");
+  const countersRef = db.collection("counters").doc("labNumber");
+  const settingsRef = db.collection("settings").doc("global");
+  const techsRef = db.collection("technicians");
+
+  // ========= UI helpers =========
+  const navLinks = document.querySelectorAll(".nav-link");
+  const pages = document.querySelectorAll(".pages");
+  const toastEl = document.getElementById("toast");
+  let qr;
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    setTimeout(() => toastEl.classList.remove("show"), 2600);
+  }
+
+  function switchPage(id) {
+    pages.forEach(p => p.classList.toggle("active", p.id === id));
+    navLinks.forEach(b => b.classList.toggle("active", b.dataset.target === id));
+  }
+
+  navLinks.forEach(btn => {
+    btn.addEventListener("click", () => switchPage(btn.dataset.target));
+  });
+
+  // ========= QR preview =========
+  function updateQR(barcode) {
+    const barcodeText = document.getElementById("barcodeText");
+    if (!barcode) {
+      barcodeText.textContent = "—";
+      if (qr) qr.clear();
+      return;
     }
-
-    function renderTable() {
-      tableBody.innerHTML = '';
-      cases.forEach(c => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${c.id}</td>
-          <td>${c.patient}</td>
-          <td>${c.doctor}</td>
-          <td>${c.status}</td>
-          <td><img class="qr-img" src="${c.qr}" /></td>
-        `;
-        tableBody.appendChild(tr);
+    barcodeText.textContent = barcode;
+    if (!qr) {
+      qr = new QRCode(document.getElementById("qrcode"), {
+        text: barcode,
+        width: 120,
+        height: 120
       });
+    } else {
+      qr.clear();
+      qr.makeCode(barcode);
     }
+  }
 
-    function generateQR(id) {
-      const qr = new QRious({ value: id, size: 100 });
-      return qr.toDataURL();
-    }
+  // ========= LAB NUMBER GENERATOR =========
+  async function getNextLabNumber() {
+    const newNumber = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(countersRef);
+      let current = 0;
+      if (snap.exists && typeof snap.data().current === "number") {
+        current = snap.data().current;
+      }
+      const updated = current + 1;
+      tx.set(countersRef, { current: updated }, { merge: true });
+      return updated;
+    });
+    return "LAB-" + String(newNumber).padStart(6, "0");
+  }
 
-    document.getElementById("caseForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const id = "C" + Date.now();
-      const qr = generateQR(id);
+  // ========= CASE HELPERS =========
+  function inferDepartment(caseType) {
+    if (!caseType) return "";
+    const t = caseType.toLowerCase();
+    if (t.includes("cad") || t.includes("crown")) return "CAD/CAM";
+    if (t.includes("pfm")) return "PFM";
+    if (t.includes("rpd")) return "RPD";
+    if (t.includes("ortho")) return "Ortho";
+    if (t.includes("temp")) return "Temporary";
+    if (t.includes("cast")) return "Casting";
+    return "Other";
+  }
+
+  function renderCaseSummary(container, docId, data) {
+    const html = `
+      <div>
+        <strong>${data.patientName || "بدون اسم"}</strong>
+        <span class="badge">ملف: ${data.fileNumber || "-"}</span>
+        <span class="badge">Lab: ${data.labNumber || "-"}</span>
+      </div>
+      <div class="muted" style="margin-top:4px;">
+        نوع الحالة: ${data.caseType || "-"} – د.${data.doctorName || "-"} – عيادة ${data.clinicNumber || "-"}
+      </div>
+      <div class="status-chip ${data.status === "Ready for Clinic" ? "complete" : ""}">
+        الحالة الحالية: ${data.status || "-"}
+      </div>
+      <div class="muted" style="margin-top:4px;">ID: ${docId}</div>
+    `;
+    container.innerHTML = html;
+  }
+
+  async function addTracking(docId, status, updatedBy, note) {
+    const trackingRef = casesRef.doc(docId).collection("tracking");
+    await trackingRef.add({
+      status,
+      updatedBy,
+      note: note || "",
+      time: firebase.firestore.Timestamp.now()
+    });
+  }
+
+  async function findCaseByAnyKey(key) {
+    if (!key) return null;
+    const trimmed = key.trim();
+    // 1) fileNumber
+    let snap = await casesRef.where("fileNumber", "==", trimmed).limit(1).get();
+    if (!snap.empty) return { id: snap.docs[0].id, data: snap.docs[0].data() };
+
+    // 2) labNumber
+    snap = await casesRef.where("labNumber", "==", trimmed).limit(1).get();
+    if (!snap.empty) return { id: snap.docs[0].id, data: snap.docs[0].data() };
+
+    // 3) barcode
+    snap = await casesRef.where("barcode", "==", trimmed).limit(1).get();
+    if (!snap.empty) return { id: snap.docs[0].id, data: snap.docs[0].data() };
+
+    return null;
+  }
+
+  // ========= 1) CLINIC ENTRY FORM =========
+  document.getElementById("clinicForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const fileNumber = document.getElementById("fileNumber").value.trim();
+      const patientName = document.getElementById("patientName").value.trim();
+      const clinicNumber = document.getElementById("clinicNumber").value.trim();
+      const doctorName = document.getElementById("doctorName").value.trim();
+      const caseType = document.getElementById("caseType").value;
+      const nextAppointment = document.getElementById("nextAppointment").value;
+      const doctorNote = document.getElementById("doctorNote").value.trim();
+      const requestImage = document.getElementById("requestImage").value.trim();
+
+      if (!fileNumber || !patientName || !clinicNumber || !doctorName || !caseType) {
+        showToast("⚠️ تأكدي من إدخال كل الحقول الأساسية.");
+        return;
+      }
+
+      const labNumber = await getNextLabNumber();
+      const barcode = labNumber; // نفس الرقم للسهولة
+      const department = inferDepartment(caseType);
+
       const newCase = {
-        id,
-        patient: patientName.value,
-        file: fileNumber.value,
-        doctor: doctor.value,
-        assistant: assistant.value,
-        clinic: clinic.value,
-        type: caseType.value,
-        desc: description.value,
-        status: "New",
-        qr,
-        history: [ { stage: "Added", date: new Date().toLocaleString() } ]
+        fileNumber,
+        patientName,
+        clinicNumber,
+        doctorName,
+        caseType,
+        department,
+        nextAppointment: nextAppointment || null,
+        doctorNote: doctorNote || "",
+        requestImage: requestImage || "",
+        createdAt: firebase.firestore.Timestamp.now(),
+        status: "Entered from Clinic",
+        labNumber,
+        barcode,
+        technicianName: "",
+        boxNumber: "",
+        isRejected: false,
+        rejectionReason: ""
       };
-      cases.push(newCase);
-      localStorage.setItem("clinicCases", JSON.stringify(cases));
-      this.reset();
-      renderTable();
-      alert("✅ Case saved with ID: " + id);
-    });
 
-    renderTable();
+      const docRef = await casesRef.add(newCase);
+      await addTracking(docRef.id, "Entered from Clinic", "Clinic Reception", "Case added to system.");
 
-    const htmlScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    htmlScanner.render((decodedText) => {
-      const found = cases.find(c => c.id === decodedText);
-      if (!found) return alert("❌ Case not found!");
-      const go = confirm(`📄 Case: ${found.patient}\nDoctor: ${found.doctor}\n\n➡️ View details?`);
-      if (go) {
-        alert(`✅ Case: ${found.patient}\nType: ${found.type}\nStatus: ${found.status}`);
-      } else {
-        found.status = "Next Stage";
-        found.history.push({ stage: "Updated", date: new Date().toLocaleString() });
-        localStorage.setItem("clinicCases", JSON.stringify(cases));
-        renderTable();
-        alert("🔁 Case status updated!");
+      document.getElementById("clinicForm").reset();
+      const lastCaseBox = document.getElementById("lastCaseBox");
+      renderCaseSummary(lastCaseBox, docRef.id, newCase);
+      updateQR(barcode);
+      showToast("✅ تم حفظ الحالة وتوليد رقم معمل.");
+
+    } catch (err) {
+      console.error(err);
+      showToast("❌ خطأ أثناء حفظ الحالة. تأكدي من الاتصال بالإنترنت.");
+    }
+  });
+
+  // ========= 2) LAB CHECK-IN =========
+  document.getElementById("btnLabSearch").addEventListener("click", async () => {
+    const val = document.getElementById("labSearchInput").value;
+    const box = document.getElementById("labSearchResult");
+    box.textContent = "جاري البحث…";
+    try {
+      const result = await findCaseByAnyKey(val);
+      if (!result) {
+        box.textContent = "لم يتم العثور على حالة بهذه البيانات.";
+        return;
       }
+      const { id, data } = result;
+      const html = `
+        <div><strong>${data.patientName}</strong> <span class="badge">ملف: ${data.fileNumber}</span> <span class="badge">Lab: ${data.labNumber}</span></div>
+        <div class="muted">نوع: ${data.caseType} – د.${data.doctorName} – عيادة ${data.clinicNumber}</div>
+        <div class="status-chip ${data.status === "In Lab" ? "in-lab" : ""}">
+          الحالة الحالية: ${data.status}
+        </div>
+        <button class="btn btn-main" id="btnMarkInLab" style="margin-top:8px;">✅ تأكيد وصول الحالة للمعمل</button>
+      `;
+      box.innerHTML = html;
+
+      document.getElementById("btnMarkInLab").onclick = async () => {
+        try {
+          await casesRef.doc(id).update({
+            status: "In Lab"
+          });
+          await addTracking(id, "In Lab", "Lab Check-in", "Case received in lab.");
+          showToast("✅ تم تأكيد وصول الحالة للمعمل.");
+          document.getElementById("labSearchResult").querySelector(".status-chip").textContent = "الحالة الحالية: In Lab";
+          document.getElementById("labSearchResult").querySelector(".status-chip").classList.add("in-lab");
+        } catch (e) {
+          console.error(e);
+          showToast("❌ لم يتم التحديث.");
+        }
+      };
+    } catch (err) {
+      console.error(err);
+      box.textContent = "حدث خطأ أثناء البحث.";
+    }
+  });
+
+  // ========= TECHNICIANS LIST (for dashboard & settings) =========
+  const defaultTechnicians = [
+    // CAD/CAM
+    { name: "قاسم عسيري", department: "CAD/CAM" },
+    { name: "أحمد كوشان", department: "CAD/CAM" },
+    { name: "عبدالله الرشيد", department: "CAD/CAM" },
+    { name: "عبدالله الشهراني", department: "CAD/CAM" },
+    { name: "أحمد القحطاني", department: "CAD/CAM" },
+    { name: "يحيى عسيري", department: "CAD/CAM" },
+
+    // PFM
+    { name: "سلطان الاحمري", department: "PFM" },
+    { name: "أيمن الشهري", department: "PFM" },
+    { name: "فيصل الوادعي", department: "PFM" },
+
+    // Ortho
+    { name: "تركي الشهري", department: "Ortho" },
+    { name: "وليد الشهري", department: "Ortho" },
+    { name: "أسامة عسيري", department: "Ortho" },
+
+    // RPD
+    { name: "رشيد الكثيري", department: "RPD" },
+    { name: "أحمد الصخري", department: "RPD" },
+    { name: "عبداللطيف عسيري", department: "RPD" },
+    { name: "محمد الشرفان", department: "RPD" },
+    { name: "الاء", department: "RPD" },
+    { name: "هيا م", department: "RPD" },
+    { name: "محمد الغامدي", department: "RPD" },
+    { name: "منصور العويرضي", department: "RPD" },
+    { name: "عبدالله الغامدي", department: "RPD" },
+
+    // Temporary
+    { name: "احمد الشبل", department: "Temporary" },
+    { name: "وليد السويري", department: "Temporary" },
+    { name: "فهد العتيبي", department: "Temporary" },
+    { name: "عبدالله العود", department: "Temporary" },
+
+    // Casting
+    { name: "فهد الخميس", department: "Casting" }
+  ];
+
+  async function seedTechniciansIfEmpty() {
+    const snap = await techsRef.limit(1).get();
+    if (!snap.empty) {
+      showToast("✅ الفنيين موجودين مسبقاً.");
+      return;
+    }
+    const batch = db.batch();
+    defaultTechnicians.forEach(t => {
+      const doc = techsRef.doc();
+      batch.set(doc, {
+        name: t.name,
+        department: t.department,
+        active: true
+      });
+    });
+    await batch.commit();
+    showToast("✅ تم إنشاء قائمة الفنيين.");
+    await loadTechSettingsList();
+    await loadTechDropdown();
+  }
+
+  document.getElementById("btnSeedTechs").addEventListener("click", seedTechniciansIfEmpty);
+
+  async function loadTechDropdown() {
+    const select = document.getElementById("techNameFilter");
+    const dept = document.getElementById("techDeptFilter").value;
+    select.innerHTML = `<option value="">كل الفنيين</option>`;
+
+    let q = techsRef.orderBy("name");
+    if (dept) q = q.where("department", "==", dept);
+    const snap = await q.get();
+    snap.forEach(doc => {
+      const t = doc.data();
+      if (!t.active) return; // فقط النشطين للداشبورد
+      const opt = document.createElement("option");
+      opt.value = doc.id;
+      opt.textContent = `${t.name} (${t.department})`;
+      select.appendChild(opt);
+    });
+  }
+
+  document.getElementById("techDeptFilter").addEventListener("change", loadTechDropdown);
+
+  // ========= SETTINGS – TECH LIST =========
+  async function loadTechSettingsList() {
+    const list = document.getElementById("techSettingsList");
+    const search = document.getElementById("techSearchInput").value.trim();
+    let q = techsRef.orderBy("name");
+    const snap = await q.get();
+    if (snap.empty) {
+      list.innerHTML = `<div class="case-item muted">لا يوجد فنيين – اضغطي زر إنشاء قائمة الفنيين الافتراضية.</div>`;
+      return;
+    }
+    list.innerHTML = "";
+    snap.forEach(doc => {
+      const t = doc.data();
+      if (search && !t.name.includes(search)) return;
+      const item = document.createElement("div");
+      item.className = "case-item";
+      item.innerHTML = `
+        <div class="case-item-header">
+          <div><strong>${t.name}</strong> <span class="badge">${t.department}</span></div>
+          <div>
+            <label style="font-size:10px;">
+              <input type="checkbox" ${t.active ? "checked" : ""} data-id="${doc.id}" class="tech-active-toggle" />
+              نشط / Active
+            </label>
+          </div>
+        </div>
+      `;
+      list.appendChild(item);
     });
 
-    // Chart
-    const ctx = document.getElementById('statsChart').getContext('2d');
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['New', 'Next Stage', 'Done'],
-        datasets: [{
-          label: 'Cases',
-          data: [0, 0, 0],
-          backgroundColor: ['#007bff', '#ffc107', '#28a745']
-        }]
-      }
+    document.querySelectorAll(".tech-active-toggle").forEach(ch => {
+      ch.addEventListener("change", async (e) => {
+        const id = e.target.dataset.id;
+        await techsRef.doc(id).update({ active: e.target.checked });
+        showToast("✅ تم تحديث حالة الفني.");
+        loadTechDropdown();
+      });
     });
+  }
 
-    function updateChart() {
-      const stats = { New: 0, "Next Stage": 0, Done: 0 };
-      cases.forEach(c => stats[c.status] = (stats[c.status] || 0) + 1);
-      chart.data.datasets[0].data = [stats["New"], stats["Next Stage"], stats["Done"]];
-      chart.update();
+  document.getElementById("techSearchInput").addEventListener("input", () => {
+    loadTechSettingsList();
+  });
+
+  // ========= SETTINGS – PIN =========
+  async function loadSettings() {
+    const snap = await settingsRef.get();
+    if (snap.exists && snap.data().specialistPin) {
+      document.getElementById("specialistPinInput").value = snap.data().specialistPin;
+    }
+  }
+
+  document.getElementById("btnSavePin").addEventListener("click", async () => {
+    const pin = document.getElementById("specialistPinInput").value.trim();
+    await settingsRef.set({ specialistPin: pin }, { merge: true });
+    showToast("✅ تم حفظ الرقم السري.");
+  });
+
+  // ========= TECH DASHBOARD – LOAD CASES =========
+  document.getElementById("btnLoadTechCases").addEventListener("click", async () => {
+    const dept = document.getElementById("techDeptFilter").value;
+    const techId = document.getElementById("techNameFilter").value;
+    const list = document.getElementById("techCasesList");
+    list.innerHTML = `<div class="case-item muted">جاري التحميل…</div>`;
+
+    let techName = "";
+    if (techId) {
+      const tSnap = await techsRef.doc(techId).get();
+      if (tSnap.exists) techName = tSnap.data().name;
     }
 
-    updateChart();
-  </script>
+    let q = casesRef.where("status", "!=", "Ready for Clinic"); // Firestore can't use "!=" + orderBy easily, فنعمل فلتر يدوي لاحقاً
+    if (dept) q = q.where("department", "==", dept);
+    if (techName) q = q.where("technicianName", "==", techName);
+
+    const snap = await q.orderBy("createdAt", "desc").limit(40).get().catch(async (err) => {
+      // إذا أعطى خطأ بسبب (!=) نستخدم فلتر يدوي
+      console.warn("fallback query", err);
+      let q2 = casesRef;
+      if (dept) q2 = q2.where("department", "==", dept);
+      const s2 = await q2.orderBy("createdAt", "desc").limit(40).get();
+      return s2;
+    });
+
+    if (snap.empty) {
+      list.innerHTML = `<div class="case-item muted">لا توجد حالات لهذا الفني/القسم.</div>`;
+      return;
+    }
+
+    list.innerHTML = "";
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data.status === "Ready for Clinic") return;
+      if (techName && data.technicianName !== techName) return;
+
+      const item = document.createElement("div");
+      item.className = "case-item";
+      item.innerHTML = `
+        <div class="case-item-header">
+          <div>
+            <strong>${data.patientName}</strong>
+            <span class="badge">ملف: ${data.fileNumber}</span>
+            <span class="badge">Lab: ${data.labNumber}</span>
+          </div>
+          <div class="muted">${data.caseType || ""}</div>
+        </div>
+        <div class="muted">د.${data.doctorName || "-"} – عيادة ${data.clinicNumber || "-"}</div>
+        <div class="muted">الفني الحالي: ${data.technicianName || "لم يحدد بعد"}</div>
+        <div class="status-chip ${data.status === "Completed" ? "complete" : ""}">
+          الحالة: ${data.status || "-"}
+        </div>
+        <div class="case-item-actions">
+          <button class="btn btn-ghost btn-assign" data-id="${doc.id}">📌 تعيين فني</button>
+          <button class="btn btn-main btn-progress" data-id="${doc.id}">▶️ In Progress</button>
+          <button class="btn btn-main btn-complete" data-id="${doc.id}">✅ Completed</button>
+          <button class="btn btn-danger btn-return" data-id="${doc.id}">↩️ Returned</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+
+    // Events
+    list.querySelectorAll(".btn-assign").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        const techIdSel = document.getElementById("techNameFilter").value;
+        if (!techIdSel) {
+          showToast("اختاري فني من الأعلى أولاً.");
+          return;
+        }
+        const tSnap = await techsRef.doc(techIdSel).get();
+        if (!tSnap.exists) return;
+        const name = tSnap.data().name;
+        await casesRef.doc(id).update({ technicianName: name, department: tSnap.data().department });
+        await addTracking(id, "Assigned to Technician", name, "Case assigned to technician.");
+        showToast("✅ تم تعيين الفني للحالة.");
+        document.getElementById("btnLoadTechCases").click();
+      });
+    });
+
+    list.querySelectorAll(".btn-progress").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        await casesRef.doc(id).update({ status: "In Progress" });
+        await addTracking(id, "In Progress", "Technician", "Work started.");
+        showToast("▶️ الحالة الآن In Progress.");
+        document.getElementById("btnLoadTechCases").click();
+      });
+    });
+
+    list.querySelectorAll(".btn-complete").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        await casesRef.doc(id).update({ status: "Completed" });
+        await addTracking(id, "Completed", "Technician", "Work finished.");
+        showToast("✅ الحالة الآن Completed.");
+        document.getElementById("btnLoadTechCases").click();
+      });
+    });
+
+    list.querySelectorAll(".btn-return").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        const reason = prompt("سبب رجوع الحالة؟ (Returned Reason)");
+        await casesRef.doc(id).update({ status: "Returned", isRejected: true, rejectionReason: reason || "" });
+        await addTracking(id, "Returned", "Technician", reason || "Returned without note.");
+        showToast("↩️ تم تسجيل الحالة كـ Returned.");
+        document.getElementById("btnLoadTechCases").click();
+      });
+    });
+  });
+
+  // ========= READY FOR CLINIC =========
+  document.getElementById("btnReadySearch").addEventListener("click", async () => {
+    const val = document.getElementById("readySearchInput").value;
+    const box = document.getElementById("readySearchResult");
+    box.textContent = "جاري البحث…";
+    try {
+      const res = await findCaseByAnyKey(val);
+      if (!res) {
+        box.textContent = "لم يتم العثور على حالة.";
+        return;
+      }
+      const { id, data } = res;
+      const html = `
+        <div><strong>${data.patientName}</strong> <span class="badge">ملف: ${data.fileNumber}</span> <span class="badge">Lab: ${data.labNumber}</span></div>
+        <div class="muted">الحالة الحالية: ${data.status}</div>
+        <label style="margin-top:6px;">رقم الصندوق Box Number</label>
+        <input type="text" id="readyBoxInput" value="${data.boxNumber || ""}" />
+        <button class="btn btn-main" id="btnMarkReady" style="margin-top:8px;">✅ Ready for Clinic</button>
+      `;
+      box.innerHTML = html;
+      document.getElementById("btnMarkReady").onclick = async () => {
+        const boxNumber = document.getElementById("readyBoxInput").value.trim();
+        await casesRef.doc(id).update({ status: "Ready for Clinic", boxNumber });
+        await addTracking(id, "Ready for Clinic", "Specialist", "Case delivered to clinic / box " + boxNumber);
+        showToast("✅ تم تسجيل الحالة Ready for Clinic.");
+      };
+    } catch (e) {
+      console.error(e);
+      box.textContent = "حدث خطأ أثناء البحث.";
+    }
+  });
+
+  document.getElementById("btnLoadCompleted").addEventListener("click", async () => {
+    const list = document.getElementById("readyCasesList");
+    list.innerHTML = `<div class="case-item muted">جاري التحميل…</div>`;
+    const snap = await casesRef.where("status", "==", "Completed").orderBy("createdAt", "desc").limit(20).get();
+    if (snap.empty) {
+      list.innerHTML = `<div class="case-item muted">لا توجد حالات مكتملة حالياً.</div>`;
+      return;
+    }
+    list.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const item = document.createElement("div");
+      item.className = "case-item";
+      item.innerHTML = `
+        <div class="case-item-header">
+          <div>
+            <strong>${d.patientName}</strong>
+            <span class="badge">Lab: ${d.labNumber}</span>
+          </div>
+          <div class="muted">${d.caseType}</div>
+        </div>
+        <div class="muted">ملف: ${d.fileNumber} – د.${d.doctorName}</div>
+        <button class="btn btn-main btn-ready-small" data-id="${doc.id}">✅ Ready for Clinic</button>
+      `;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll(".btn-ready-small").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        const boxNum = prompt("Box Number / رقم الصندوق؟");
+        await casesRef.doc(id).update({ status: "Ready for Clinic", boxNumber: boxNum || "" });
+        await addTracking(id, "Ready for Clinic", "Specialist", "Case delivered to clinic / box " + (boxNum || ""));
+        showToast("✅ تم التحديث.");
+        document.getElementById("btnLoadCompleted").click();
+      });
+    });
+  });
+
+  // ========= GLOBAL SEARCH =========
+  document.getElementById("btnGlobalSearch").addEventListener("click", async () => {
+    const val = document.getElementById("globalSearchInput").value;
+    const box = document.getElementById("globalCaseDetails");
+    const trackBox = document.getElementById("globalTracking");
+    box.textContent = "جاري البحث…";
+    trackBox.textContent = "";
+    try {
+      const res = await findCaseByAnyKey(val);
+      if (!res) {
+        box.textContent = "لم يتم العثور على حالة.";
+        trackBox.textContent = "—";
+        return;
+      }
+      const { id, data } = res;
+      renderCaseSummary(box, id, data);
+
+      const tSnap = await casesRef.doc(id).collection("tracking").orderBy("time", "asc").get();
+      if (tSnap.empty) {
+        trackBox.textContent = "لا يوجد تتبع بعد.";
+        return;
+      }
+      let html = "";
+      tSnap.forEach(doc => {
+        const t = doc.data();
+        const date = t.time.toDate();
+        const formatted = date.toLocaleString("en-GB");
+        html += `
+          <div class="muted">
+            <strong>${t.status}</strong> – بواسطة ${t.updatedBy || "-"}<br/>
+            <span style="font-size:9px;">${formatted}</span><br/>
+            <span style="font-size:10px;">${t.note || ""}</span>
+          </div>
+          <hr style="border:0;border-top:1px dashed #eee;margin:6px 0;">
+        `;
+      });
+      trackBox.innerHTML = html;
+    } catch (e) {
+      console.error(e);
+      box.textContent = "حدث خطأ أثناء البحث.";
+      trackBox.textContent = "—";
+    }
+  });
+
+  // ========= INITIAL LOAD =========
+  (async function init() {
+    try {
+      await loadSettings();
+      await loadTechSettingsList();
+      await loadTechDropdown();
+      showToast("✨ النظام جاهز – DSA LAB SYSTEM");
+    } catch (e) {
+      console.error(e);
+    }
+  })();
+</script>
 </body>
 </html>
